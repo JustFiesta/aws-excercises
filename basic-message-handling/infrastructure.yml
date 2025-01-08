@@ -23,6 +23,11 @@ Parameters:
     Type: String
     Description: The name of the IAM role
     Default: AllowLambdaToAccessS3AndSQS
+  
+  PremissionBoundaryARN:
+    Type: String
+    Description: The ARN of the default permission boundary
+    Default: arn:aws:iam::910681227783:policy/DefaultBoundaryPolicy
 
 Resources:
   # IAM Role for Lambda
@@ -37,6 +42,7 @@ Resources:
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
+      PermissionsBoundary: !Ref PremissionBoundaryARN
       Policies:
         - PolicyName: LambdaS3SQSPolicy
           PolicyDocument:
