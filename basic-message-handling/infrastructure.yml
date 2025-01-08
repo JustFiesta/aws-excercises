@@ -1,1 +1,99 @@
----
+AWSTemplateFormatVersion: '2010-09-09'
+
+# need: s3, SQS, Lambda, IAM Role for lambda + user created role for CloudFormation
+# Paremeters for: bucket name, queue name, lambdy name, role name
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: The name of the S3 bucket
+    Default: mbocak-module1-1-bucket
+
+  FunctionName:
+    Type: String
+    Description: The name of the Lambda function
+    Default: mbocak-module1-1-function
+
+  QueueName:
+    Type: String
+    Description: The name of the SQS queue
+    Default: mbocak-module1-1-queue
+
+  RoleName:
+    Type: String
+    Description: The name of the IAM role
+    Default: AllowLambdaToAccessS3AndSQS
+
+Resources:
+  # IAM Role for Lambda
+  IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: AllowLambdaToAccessS3AndSQS
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaS3SQSPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource: !Sub arn:aws:s3:::${BucketName}/*
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt SQSQueue.Arn
+
+  # S3 Bucket
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+
+  # SQS Queue
+  SQSQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref QueueName
+
+  # Lambda Function
+  ServerlessFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      Runtime: python3.9
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt IAMRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import os
+          s3_client = boto3.client('s3')
+          def lambda_handler(event, context):
+              bucket_name = os.environ['BUCKET_NAME']
+              for record in event['Records']:
+                  message_id = record['messageId']
+                  message_body = record['body']
+                  file_name = f"{message_id}.json"
+                  s3_client.put_object(Bucket=bucket_name, Key=file_name, Body=message_body)
+              return {"statusCode": 200, "body": "Success"}
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref BucketName
+
+  # SQS Trigger for Lambda
+  LambdaSQSMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 10
+      EventSourceArn: !GetAtt SQSQueue.Arn
+      FunctionName: !Ref ServerlessFunction
