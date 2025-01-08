@@ -50,8 +50,8 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - s3:PutObject
-                Resource: !Sub arn:aws:s3:::${BucketName}/*
+                  - s3:*
+                Resource: !GetAtt Bucket.Arn
               - Effect: Allow
                 Action:
                   - sqs:ReceiveMessage
