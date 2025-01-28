@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Assesment template for Lambda function'
+
+Resources:
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Lambda function
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-lambda-sg
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Policies:
+        - PolicyName: !Sub ${EnvironmentName}-lambda-custom-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !GetAtt StorageBucket.Arn
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref SecretManagerSecret
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${EnvironmentName}-app-function
+      Handler: index.handler
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const s3 = new AWS.S3();
+          const secretsManager = new AWS.SecretsManager();
+
+          exports.handler = async (event) => {
+            try {
+              // Get secret
+              const secretData = await secretsManager.getSecretValue({
+                SecretId: process.env.SECRET_ARN
+              }).promise();
+              
+              // List files in bucket
+              const bucketContents = await s3.listObjects({
+                Bucket: process.env.BUCKET_NAME
+              }).promise();
+              
+              return {
+                statusCode: 200,
+                body: JSON.stringify({
+                  secret: secretData.SecretString,
+                  files: bucketContents.Contents.map(item => item.Key)
+                })
+              };
+            } catch (error) {
+              console.error(error);
+              return {
+                statusCode: 500,
+                body: JSON.stringify({ error: 'Internal server error' })
+              };
+            }
+          }
+      Runtime: nodejs18.x
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          SECRET_ARN: !Ref SecretManagerSecret
+          BUCKET_NAME: !Ref StorageBucket
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds: !Split [',', !Join [',', [!Ref PrivateSubnet1, !Ref PrivateSubnet2]]]
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+Outputs:
+  LambdaFunctionName:
+    Description: 'Lambda Function Name'
+    Value: !Ref LambdaFunction
+    Export:
+      Name: !Sub ${EnvironmentName}-LambdaFunctionName

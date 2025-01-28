@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Assesment template for storage setup'
+
+Resources:
+  StorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::AccountId}-${EnvironmentName}-storage
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+          
+Outputs:
+  BucketName:
+    Description: 'Storage Bucket Name'
+    Value: !Ref StorageBucket
+    Export:
+      Name: !Sub ${EnvironmentName}-BucketName

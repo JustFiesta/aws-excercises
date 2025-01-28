@@ -33,7 +33,14 @@ The Lambda function demonstrates:
 Deployment is handled via AWS CLI using CloudFormation templates:
 
 ```sh
+aws configure
+
 aws cloudformation deploy \
   --template-file file://main.yaml \
   --stack-name assessment-stack
+
+aws cloudformation deploy \
+  --template-file main.yaml \
+  --stack-name STACK_NAME \
+  --capabilities CAPABILITY_IAM
 ```

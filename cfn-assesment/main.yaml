@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Main infrastructure stack that references nested stacks'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: 'dev'
+  
+  VpcCIDR:
+    Type: String
+    Default: '10.0.0.0/16'
+
+Resources:
+  NetworkStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: network.yaml
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        VpcCIDR: !Ref VpcCIDR
+
+  LoadBalancerStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: NetworkStack
+    Properties:
+      TemplateURL: alb.yaml
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        VpcId: !GetAtt NetworkStack.Outputs.VpcId
+        PublicSubnets: !GetAtt NetworkStack.Outputs.PublicSubnetIds
+
+  SecurityStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: security.yaml
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+
+  StorageStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: storage.yaml
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+
+  LambdaStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [NetworkStack, StorageStack]
+    Properties:
+      TemplateURL: lambda.yaml
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        VpcId: !GetAtt NetworkStack.Outputs.VpcId
+        PrivateSubnets: !GetAtt NetworkStack.Outputs.PrivateSubnetIds
+        BucketName: !GetAtt StorageStack.Outputs.BucketName
+        SecretArn: !GetAtt StorageStack.Outputs.SecretARN
