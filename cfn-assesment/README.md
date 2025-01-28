@@ -35,12 +35,19 @@ Deployment is handled via AWS CLI using CloudFormation templates:
 ```sh
 aws configure
 
+# Create bucket for templates with
 aws cloudformation deploy \
-  --template-file file://main.yaml \
-  --stack-name assessment-stack
+  --template-file stack-bucket.yaml \
+  --stack-name BUCKET_STACK_NAME
+
+aws s3 cp network.yaml s3://BUCKET_NAME/network.yaml
+aws s3 cp security.yaml s3://BUCKET_NAME/security.yaml
+aws s3 cp storage.yaml s3://BUCKET_NAME/storage.yaml
+aws s3 cp alb.yaml s3://BUCKET_NAME/alb.yaml
+aws s3 cp lambda.yaml s3://BUCKET_NAME/lambda.yaml
 
 aws cloudformation deploy \
   --template-file main.yaml \
-  --stack-name STACK_NAME \
+  --stack-name MAIN_STACK_NAME \
   --capabilities CAPABILITY_IAM
 ```
