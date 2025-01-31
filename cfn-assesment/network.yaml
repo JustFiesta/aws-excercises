@@ -49,6 +49,7 @@ Resources:
     Properties:
       InternetGatewayId: !Ref InternetGateway
       VpcId: !Ref VPC
+    DependsOn: VPC
 
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
@@ -57,6 +58,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-private-rt
+    DependsOn: InternetGatewayAttachment
 
   LambdaVPCEndpoint:
     Type: AWS::EC2::VPCEndpoint
