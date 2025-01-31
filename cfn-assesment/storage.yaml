@@ -1,6 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Assesment template for storage setup'
 
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: 'dev'
+
 Resources:
   StorageBucket:
     Type: AWS::S3::Bucket
