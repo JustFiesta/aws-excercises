@@ -10,11 +10,14 @@ Parameters:
     Type: String
     Default: '10.0.0.0/16'
 
+  BucketName:
+    Type: String
+    Description: "The name of the S3 bucket where the templates are stored"
 Resources:
   NetworkStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: network.yaml
+      TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/network.yaml'
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         VpcCIDR: !Ref VpcCIDR
@@ -23,7 +26,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     DependsOn: NetworkStack
     Properties:
-      TemplateURL: alb.yaml
+      TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/alb.yaml'
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         VpcId: !GetAtt NetworkStack.Outputs.VpcId
@@ -32,7 +35,7 @@ Resources:
   StorageStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: storage.yaml
+      TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/storage.yaml'
       Parameters:
         EnvironmentName: !Ref EnvironmentName
 
@@ -40,7 +43,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     DependsOn: [NetworkStack, StorageStack]
     Properties:
-      TemplateURL: lambda.yaml
+      TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/lambda.yaml'
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         VpcId: !GetAtt NetworkStack.Outputs.VpcId
