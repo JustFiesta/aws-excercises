@@ -1,26 +1,24 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Assesment template for network setup'
 
-Mappings:
-  SubnetConfig:
-    Subnets:
-      Private:
-        - CIDR: '10.0.1.0/24'
-          AZ: 0
-          Name: 'private-1'
-        - CIDR: '10.0.2.0/24'
-          AZ: 1
-          Name: 'private-2'
-      Public:
-        - CIDR: '10.0.3.0/24'
-          AZ: 0
-          Name: 'public-1'
-        - CIDR: '10.0.4.0/24'
-          AZ: 1
-          Name: 'public-2'
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: 'dev'
+
+  VpcCIDR:
+    Type: String
+    Default: '10.0.0.0/16'
+
+  PrivateSubnetCIDR:
+    Type: String
+    Default: '10.0.1.0/24'
+
+  AvailabilityZone:
+    Type: String
+    Default: 'eu-west-1a'
 
 Resources:
-  # VPC
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -31,13 +29,20 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName}-vpc
 
-  # Internet Gateway
-  InternetGateway:
-    Type: AWS::EC2::InternetGateway
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
     Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnetCIDR
+      AvailabilityZone: !Ref AvailabilityZone
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-igw
+          Value: !Sub ${EnvironmentName}-private-subnet
+        - Key: Type
+          Value: Private
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
 
   InternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -45,91 +50,40 @@ Resources:
       InternetGatewayId: !Ref InternetGateway
       VpcId: !Ref VPC
 
-  # Private Subnets using ForEach
-  PrivateSubnets:
-    Type: AWS::CloudFormation::Macro
-    Properties:
-      Fn::ForEach::PrivateSubnet:
-        - Value: !FindInMap ['SubnetConfig', 'Subnets', 'Private']
-        - Type: AWS::EC2::Subnet
-          Properties:
-            VpcId: !Ref VPC
-            AvailabilityZone: !Select [$.AZ, !GetAZs '']
-            CidrBlock: $.CIDR
-            Tags:
-              - Key: Name
-                Value: !Sub ${EnvironmentName}-${$.Name}
-              - Key: Type
-                Value: Private
-
-  # Public Subnets using ForEach
-  PublicSubnets:
-    Type: AWS::CloudFormation::Macro
-    Properties:
-      Fn::ForEach::PublicSubnet:
-        - Value: !FindInMap ['SubnetConfig', 'Subnets', 'Public']
-        - Type: AWS::EC2::Subnet
-          Properties:
-            VpcId: !Ref VPC
-            AvailabilityZone: !Select [$.AZ, !GetAZs '']
-            CidrBlock: $.CIDR
-            MapPublicIpOnLaunch: true
-            Tags:
-              - Key: Name
-                Value: !Sub ${EnvironmentName}-${$.Name}
-              - Key: Type
-                Value: Public
-    # Add NAT Gateway
-  NatGateway:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt NatEIP.AllocationId
-      SubnetId: !Ref PublicSubnet1
-
-  NatEIP:
-    Type: AWS::EC2::EIP
-    DependsOn: InternetGatewayAttachment
-
-  # Add VPC Endpoints
-  S3VPCEndpoint:
+  LambdaVPCEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
       VpcId: !Ref VPC
-      RouteTableIds: 
-        - !Ref PrivateRouteTable
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.lambda
+      VpcEndpointType: Interface
+      SubnetIds:
+        - !Ref PrivateSubnet
 
   SecretsManagerVPCEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.secretsmanager
       VpcId: !Ref VPC
-      PrivateDnsEnabled: true
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.secretsmanager
       VpcEndpointType: Interface
-      SubnetIds: !Ref PrivateSubnets
-      SecurityGroupIds: 
-        - !Ref EndpointSecurityGroup
+      SubnetIds:
+        - !Ref PrivateSubnet
+  
+  S3VPCEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPC
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+      VpcEndpointType: Gateway
+      RouteTableIds:
+        - !Ref PrivateRouteTable
+
 Outputs:
   VpcId:
-    Description: 'VPC ID'
     Value: !Ref VPC
     Export:
       Name: !Sub ${EnvironmentName}-VpcId
 
-  PrivateSubnetIds:
-    Description: 'Private Subnet IDs'
-    Value: 
-      Fn::ForEach::PrivateSubnetOutput:
-        - Value: !FindInMap ['SubnetConfig', 'Subnets', 'Private']
-        - !Ref 'PrivateSubnet${$.Name}'
+  PrivateSubnetId:
+    Value: !Ref PrivateSubnet
     Export:
-      Name: !Sub ${EnvironmentName}-PrivateSubnetIds
-
-  PublicSubnetIds:
-    Description: 'Public Subnet IDs'
-    Value:
-      Fn::ForEach::PublicSubnetOutput:
-        - Value: !FindInMap ['SubnetConfig', 'Subnets', 'Public']
-        - !Ref 'PublicSubnet${$.Name}'
-    Export:
-      Name: !Sub ${EnvironmentName}-PublicSubnetIds
+      Name: !Sub ${EnvironmentName}-PrivateSubnetId

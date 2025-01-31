@@ -1,17 +1,23 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Assesment template for Lambda function'
 
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: 'dev'
+
 Resources:
   LambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security group for Lambda function
-      VpcId: !Ref VPC
+      GroupDescription: 'Security group for Lambda'
+      VpcId: !ImportValue dev-VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          SourceSecurityGroupId: !Ref ALBSecurityGroup
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !ImportValue dev-ALBSecurityGroup
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-lambda-sg
@@ -29,7 +35,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
       Policies:
-        - PolicyName: !Sub ${EnvironmentName}-lambda-custom-policy
+        - PolicyName: !Sub ${EnvironmentName}-lambda-storage-policy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -39,8 +45,29 @@ Resources:
                 Resource: !GetAtt StorageBucket.Arn
               - Effect: Allow
                 Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub "${StorageBucket.Arn}/*"
+        - PolicyName: !Sub ${EnvironmentName}-lambda-secrets-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Ref SecretManagerSecret
+
+  StorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${EnvironmentName}-storage-bucket"
+
+  SecretManagerSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "${EnvironmentName}/app-secret"
+      SecretString: '{"username": "admin", "password": "supersecret"}'
 
   LambdaFunction:
     Type: AWS::Lambda::Function
@@ -51,54 +78,85 @@ Resources:
       Code:
         ZipFile: |
           const AWS = require('aws-sdk');
-          const s3 = new AWS.S3();
-          const secretsManager = new AWS.SecretsManager();
+
+          // Konfiguracja klientów AWS SDK
+          const s3 = new AWS.S3({
+              endpoint: `https://s3.${process.env.AWS_REGION}.amazonaws.com`,
+              region: process.env.AWS_REGION
+          });
+
+          const secretsManager = new AWS.SecretsManager({
+              endpoint: `https://secretsmanager.${process.env.AWS_REGION}.amazonaws.com`,
+              region: process.env.AWS_REGION
+          });
 
           exports.handler = async (event) => {
-            try {
-              // Get secret
-              const secretData = await secretsManager.getSecretValue({
-                SecretId: process.env.SECRET_ARN
-              }).promise();
-              
-              // List files in bucket
-              const bucketContents = await s3.listObjects({
-                Bucket: process.env.BUCKET_NAME
-              }).promise();
-              
-              return {
-                statusCode: 200,
-                body: JSON.stringify({
-                  secret: secretData.SecretString,
-                  files: bucketContents.Contents.map(item => item.Key)
-                })
-              };
-            } catch (error) {
-              console.error(error);
-              return {
-                statusCode: 500,
-                body: JSON.stringify({ error: 'Internal server error' })
-              };
-            }
-          }
+              try {
+                  console.log("Otrzymano żądanie, testujemy połączenie z Vault i Storage Account.");
+
+                  // Pobranie sekretu z Secrets Managera
+                  console.log("Pobieranie sekretu...");
+                  const secretData = await secretsManager.getSecretValue({
+                      SecretId: process.env.SECRET_ARN
+                  }).promise();
+                  console.log("Sekret pobrany pomyślnie.");
+
+                  // Pobranie listy plików w S3
+                  console.log("Listowanie plików w S3...");
+                  const bucketContents = await s3.listObjectsV2({
+                      Bucket: process.env.BUCKET_NAME
+                  }).promise();
+                  console.log("Lista plików pobrana pomyślnie.");
+
+                  return {
+                      statusCode: 200,
+                      body: JSON.stringify({
+                          message: "Połączenie działa!",
+                          secret: secretData.SecretString,
+                          files: bucketContents.Contents ? bucketContents.Contents.map(item => item.Key) : []
+                      })
+                  };
+              } catch (error) {
+                  console.error("Błąd podczas obsługi żądania:", error);
+                  return {
+                      statusCode: 500,
+                      body: JSON.stringify({ error: "Błąd wewnętrzny serwera" })
+                  };
+              }
+          };
       Runtime: nodejs18.x
       Timeout: 30
       MemorySize: 256
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !ImportValue dev-PrivateSubnetId
       Environment:
         Variables:
           SECRET_ARN: !Ref SecretManagerSecret
           BUCKET_NAME: !Ref StorageBucket
-      VpcConfig:
-        SecurityGroupIds:
-          - !Ref LambdaSecurityGroup
-        SubnetIds: !Split [',', !Join [',', [!Ref PrivateSubnet1, !Ref PrivateSubnet2]]]
+          AWS_REGION: !Ref AWS::Region
       Tags:
         - Key: Environment
           Value: !Ref EnvironmentName
-
 Outputs:
   LambdaFunctionName:
-    Description: 'Lambda Function Name'
     Value: !Ref LambdaFunction
     Export:
       Name: !Sub ${EnvironmentName}-LambdaFunctionName
+
+  LambdaSecurityGroup:
+    Value: !Ref LambdaSecurityGroup
+    Export:
+      Name: !Sub ${EnvironmentName}-LambdaSecurityGroup
+
+  StorageBucketName:
+    Value: !Ref StorageBucket
+    Export:
+      Name: !Sub ${EnvironmentName}-StorageBucketName
+
+  SecretManagerSecret:
+    Value: !Ref SecretManagerSecret
+    Export:
+      Name: !Sub ${EnvironmentName}-SecretManagerSecret

@@ -29,13 +29,6 @@ Resources:
         VpcId: !GetAtt NetworkStack.Outputs.VpcId
         PublicSubnets: !GetAtt NetworkStack.Outputs.PublicSubnetIds
 
-  SecurityStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: security.yaml
-      Parameters:
-        EnvironmentName: !Ref EnvironmentName
-
   StorageStack:
     Type: AWS::CloudFormation::Stack
     Properties:
