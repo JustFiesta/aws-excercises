@@ -86,6 +86,7 @@ Resources:
       VpcEndpointType: Gateway
       RouteTableIds:
         - !Ref PrivateRouteTable
+    DependsOn: PrivateRouteTable
 
 Outputs:
   VpcId:
