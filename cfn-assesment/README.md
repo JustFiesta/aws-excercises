@@ -50,4 +50,5 @@ aws cloudformation deploy \
   --template-file main.yaml \
   --stack-name MAIN_STACK_NAME \
   --capabilities CAPABILITY_IAM
+  --parameter-overrides BucketName=YOUR_BUCKET_NAME
 ```

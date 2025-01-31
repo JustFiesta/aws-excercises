@@ -13,6 +13,7 @@ Parameters:
   BucketName:
     Type: String
     Description: "The name of the S3 bucket where the templates are stored"
+
 Resources:
   NetworkStack:
     Type: AWS::CloudFormation::Stack
@@ -36,8 +37,6 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/storage.yaml'
-      Parameters:
-        EnvironmentName: !Ref EnvironmentName
 
   LambdaStack:
     Type: AWS::CloudFormation::Stack
