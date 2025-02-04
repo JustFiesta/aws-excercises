@@ -38,6 +38,11 @@ Resources:
     Properties:
       TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/storage.yaml'
 
+  SecretStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/secret.yaml'
+
   LambdaStack:
     Type: AWS::CloudFormation::Stack
     DependsOn: [NetworkStack, StorageStack]
@@ -48,4 +53,4 @@ Resources:
         VpcId: !GetAtt NetworkStack.Outputs.VpcId
         PrivateSubnets: !GetAtt NetworkStack.Outputs.PrivateSubnetIds
         BucketName: !GetAtt StorageStack.Outputs.BucketName
-        SecretArn: !GetAtt StorageStack.Outputs.SecretARN
+        SecretArn: !GetAtt SecretStack.Outputs.SecretARN
