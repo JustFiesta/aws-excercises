@@ -24,7 +24,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
-          SourceSecurityGroupId: !ImportValue dev-ALBSecurityGroup
+          CidrIp: 0.0.0.0/0 # temporary
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-lambda-sg
@@ -143,7 +143,12 @@ Outputs:
     Export:
       Name: !Sub ${EnvironmentName}-LambdaFunctionName
 
-  LambdaSecurityGroup:
+  LambdaFunctionArn:
+    Value: !GetAtt LambdaFunction.Arn
+    Export:
+      Name: !Sub ${EnvironmentName}-LambdaFunctionArn
+
+  LambdaSecurityGroupId:
     Value: !Ref LambdaSecurityGroup
     Export:
-      Name: !Sub ${EnvironmentName}-LambdaSecurityGroup
+      Name: !Sub ${EnvironmentName}-LambdaSecurityGroupId

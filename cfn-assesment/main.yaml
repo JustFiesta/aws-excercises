@@ -25,12 +25,13 @@ Resources:
 
   LoadBalancerStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: NetworkStack
+    DependsOn: LambdaStack
     Properties:
       TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/alb.yaml'
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         VpcId: !GetAtt NetworkStack.Outputs.VpcId
+        LambdaSecurityGroupId: !GetAtt LambdaStack.Outputs.LambdaSecurityGroupId
 
   StorageStack:
     Type: AWS::CloudFormation::Stack
@@ -44,7 +45,7 @@ Resources:
 
   LambdaStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: [NetworkStack, StorageStack]
+    DependsOn: NetworkStack
     Properties:
       TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/lambda.yaml'
       Parameters:

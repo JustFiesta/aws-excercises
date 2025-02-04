@@ -7,6 +7,9 @@ Parameters:
     Default: 'dev'
   VpcId:
     Type: String
+  LambdaSecurityGroupId:
+    Type: String
+    Description: 'Security Group ID for Lambda function'
 
 Resources:
   ALBSecurityGroup:
@@ -23,7 +26,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
-          DestinationSecurityGroupId: !ImportValue dev-LambdaSecurityGroup
+          DestinationSecurityGroupId: !Ref LambdaSecurityGroupId
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-alb-sg
@@ -46,7 +49,7 @@ Resources:
     Properties:
       TargetType: lambda
       Targets:
-        - Id: !ImportValue dev-LambdaFunctionName
+        - Id: !ImportValue dev-LambdaFunctionArn
 
   ALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -58,21 +61,13 @@ Resources:
       Port: 80
       Protocol: HTTP
 
-  LambdaALBPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !ImportValue dev-LambdaFunctionName
-      Principal: elasticloadbalancing.amazonaws.com
-      SourceArn: !Ref ALBTargetGroup
-
 Outputs:
   LoadBalancerDNS:
     Value: !GetAtt ApplicationLoadBalancer.DNSName
     Export:
       Name: !Sub ${EnvironmentName}-LoadBalancerDNS
 
-  ALBSecurityGroup:
+  ALBSecurityGroupId:
     Value: !Ref ALBSecurityGroup
     Export:
-      Name: !Sub ${EnvironmentName}-ALBSecurityGroup
+      Name: !Sub ${EnvironmentName}-ALBSecurityGroupId
