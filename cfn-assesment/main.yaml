@@ -31,7 +31,6 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         VpcId: !GetAtt NetworkStack.Outputs.VpcId
-        PublicSubnets: !GetAtt NetworkStack.Outputs.PublicSubnetIds
 
   StorageStack:
     Type: AWS::CloudFormation::Stack
@@ -51,6 +50,6 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         VpcId: !GetAtt NetworkStack.Outputs.VpcId
-        PrivateSubnet: !GetAtt NetworkStack.Outputs.PrivateSubnetId
+        PrivateSubnetId: !GetAtt NetworkStack.Outputs.PrivateSubnetId
         BucketName: !GetAtt StorageStack.Outputs.BucketName
         SecretArn: !GetAtt SecretStack.Outputs.SecretARN
