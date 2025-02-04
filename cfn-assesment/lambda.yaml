@@ -78,13 +78,13 @@ Resources:
 
           // Konfiguracja klientów AWS SDK
           const s3 = new AWS.S3({
-              endpoint: `https://s3.${process.env.AWS_REGION}.amazonaws.com`,
-              region: process.env.AWS_REGION
+              endpoint: `https://s3.${process.env.LAMBDA_AWS_REGION}.amazonaws.com`,
+              region: process.env.LAMBDA_AWS_REGION
           });
 
           const secretsManager = new AWS.SecretsManager({
-              endpoint: `https://secretsmanager.${process.env.AWS_REGION}.amazonaws.com`,
-              region: process.env.AWS_REGION
+              endpoint: `https://secretsmanager.${process.env.LAMBDA_AWS_REGION}.amazonaws.com`,
+              region: process.env.LAMBDA_AWS_REGION
           });
 
           exports.handler = async (event) => {
@@ -133,7 +133,7 @@ Resources:
         Variables:
           SECRET_ARN: !Ref SecretArn
           BUCKET_NAME: !Ref BucketName
-          AWS_REGION: !Ref AWS::Region
+          LAMBDA_AWS_REGION: !Ref AWS::Region
       Tags:
         - Key: Environment
           Value: !Ref EnvironmentName
