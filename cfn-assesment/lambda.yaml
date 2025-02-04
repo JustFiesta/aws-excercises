@@ -1,18 +1,25 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Assesment template for Lambda function'
 
-
 Parameters:
   EnvironmentName:
     Type: String
     Default: 'dev'
+  VpcId:
+    Type: String
+  PrivateSubnetId:
+    Type: String
+  BucketName:
+    Type: String
+  SecretArn:
+    Type: String
 
 Resources:
   LambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: 'Security group for Lambda'
-      VpcId: !ImportValue dev-VpcId
+      VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 443
@@ -42,13 +49,13 @@ Resources:
               - Effect: Allow
                 Action:
                   - s3:ListBucket
-                Resource: !GetAtt StorageBucket.Arn
+                Resource: !Sub arn:aws:s3:::${BucketName}
               - Effect: Allow
                 Action:
                   - s3:GetObject
                   - s3:PutObject
                   - s3:DeleteObject
-                Resource: !Sub "${StorageBucket.Arn}/*"
+                Resource: !Sub arn:aws:s3:::${BucketName}/*
         - PolicyName: !Sub ${EnvironmentName}-lambda-secrets-policy
           PolicyDocument:
             Version: '2012-10-17'
@@ -56,18 +63,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Ref SecretManagerSecret
-
-  StorageBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub "${EnvironmentName}-storage-bucket"
-
-  SecretManagerSecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: !Sub "${EnvironmentName}/app-secret"
-      SecretString: '{"username": "admin", "password": "supersecret"}'
+                Resource: !Ref SecretArn
 
   LambdaFunction:
     Type: AWS::Lambda::Function
@@ -131,15 +127,16 @@ Resources:
         SecurityGroupIds:
           - !Ref LambdaSecurityGroup
         SubnetIds:
-          - !ImportValue dev-PrivateSubnetId
+          - !Ref PrivateSubnetId
       Environment:
         Variables:
-          SECRET_ARN: !Ref SecretManagerSecret
-          BUCKET_NAME: !Ref StorageBucket
+          SECRET_ARN: !Ref SecretArn
+          BUCKET_NAME: !Ref BucketName
           AWS_REGION: !Ref AWS::Region
       Tags:
         - Key: Environment
           Value: !Ref EnvironmentName
+
 Outputs:
   LambdaFunctionName:
     Value: !Ref LambdaFunction
