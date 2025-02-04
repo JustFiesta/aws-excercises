@@ -20,7 +20,6 @@ Resources:
     Properties:
       TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/network.yaml'
       Parameters:
-        EnvironmentName: !Ref EnvironmentName
         VpcCIDR: !Ref VpcCIDR
 
   LoadBalancerStack:
@@ -29,7 +28,6 @@ Resources:
     Properties:
       TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/alb.yaml'
       Parameters:
-        EnvironmentName: !Ref EnvironmentName
         VpcId: !GetAtt NetworkStack.Outputs.VpcId
         PublicSubnets: !GetAtt NetworkStack.Outputs.PublicSubnetIds
 
@@ -37,8 +35,6 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/storage.yaml'
-      Parameters:
-        EnvironmentName: !Ref EnvironmentName
 
   LambdaStack:
     Type: AWS::CloudFormation::Stack
