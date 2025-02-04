@@ -10,13 +10,21 @@ Parameters:
     Type: String
     Default: '10.0.0.0/16'
 
-  PrivateSubnetCIDR:
+  PrivateSubnetCIDR1:
     Type: String
     Default: '10.0.1.0/24'
 
-  AvailabilityZone:
+  PrivateSubnetCIDR2:
+    Type: String
+    Default: '10.0.2.0/24'
+
+  AvailabilityZone1:
     Type: String
     Default: 'eu-west-1a'
+
+  AvailabilityZone2:
+    Type: String
+    Default: 'eu-west-1b'
 
 Resources:
   VPC:
@@ -29,15 +37,27 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName}-vpc
 
-  PrivateSubnet:
+  PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: !Ref PrivateSubnetCIDR
-      AvailabilityZone: !Ref AvailabilityZone
+      CidrBlock: !Ref PrivateSubnetCIDR1
+      AvailabilityZone: !Ref AvailabilityZone1
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-private-subnet
+          Value: !Sub ${EnvironmentName}-private-subnet-1
+        - Key: Type
+          Value: Private
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnetCIDR2
+      AvailabilityZone: !Ref AvailabilityZone2
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-private-subnet-2
         - Key: Type
           Value: Private
 
@@ -67,7 +87,8 @@ Resources:
       ServiceName: !Sub com.amazonaws.${AWS::Region}.lambda
       VpcEndpointType: Interface
       SubnetIds:
-        - !Ref PrivateSubnet
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
 
   SecretsManagerVPCEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -76,7 +97,8 @@ Resources:
       ServiceName: !Sub com.amazonaws.${AWS::Region}.secretsmanager
       VpcEndpointType: Interface
       SubnetIds:
-        - !Ref PrivateSubnet
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
   
   S3VPCEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -94,7 +116,12 @@ Outputs:
     Export:
       Name: !Sub ${EnvironmentName}-VpcId
 
-  PrivateSubnetId:
-    Value: !Ref PrivateSubnet
+  PrivateSubnetId1:
+    Value: !Ref PrivateSubnet1
     Export:
-      Name: !Sub ${EnvironmentName}-PrivateSubnetId
+      Name: !Sub ${EnvironmentName}-PrivateSubnetId1
+
+  PrivateSubnetId2:
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: !Sub ${EnvironmentName}-PrivateSubnetId2

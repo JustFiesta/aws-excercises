@@ -23,16 +23,6 @@ Resources:
         EnvironmentName: !Ref EnvironmentName
         VpcCIDR: !Ref VpcCIDR
 
-  LoadBalancerStack:
-    Type: AWS::CloudFormation::Stack
-    DependsOn: LambdaStack
-    Properties:
-      TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/alb.yaml'
-      Parameters:
-        EnvironmentName: !Ref EnvironmentName
-        VpcId: !GetAtt NetworkStack.Outputs.VpcId
-        LambdaSecurityGroupId: !GetAtt LambdaStack.Outputs.LambdaSecurityGroupId
-
   StorageStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -45,12 +35,24 @@ Resources:
 
   LambdaStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: NetworkStack
+    DependsOn: [NetworkStack, StorageStack]
     Properties:
       TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/lambda.yaml'
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         VpcId: !GetAtt NetworkStack.Outputs.VpcId
-        PrivateSubnetId: !GetAtt NetworkStack.Outputs.PrivateSubnetId
+        PrivateSubnetId1: !GetAtt NetworkStack.Outputs.PrivateSubnetId1
+        PrivateSubnetId2: !GetAtt NetworkStack.Outputs.PrivateSubnetId2
         BucketName: !GetAtt StorageStack.Outputs.BucketName
         SecretArn: !GetAtt SecretStack.Outputs.SecretARN
+
+  LoadBalancerStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [NetworkStack, LambdaStack]
+    Properties:
+      TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/alb.yaml'
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        VpcId: !GetAtt NetworkStack.Outputs.VpcId
+        LambdaFunctionName: !ImportValue ${EnvironmentName}-LambdaFunctionName
+        LambdaSecurityGroupId: !ImportValue ${EnvironmentName}-LambdaSecurityGroup

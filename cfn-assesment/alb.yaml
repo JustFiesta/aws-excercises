@@ -10,6 +10,9 @@ Parameters:
   LambdaSecurityGroupId:
     Type: String
     Description: 'Security Group ID for Lambda function'
+  LambdaFunctionName:
+    Type: String
+    Description: 'Name of the Lambda Function'
 
 Resources:
   ALBSecurityGroup:
@@ -38,7 +41,8 @@ Resources:
       SecurityGroups:
         - !Ref ALBSecurityGroup
       Subnets:
-        - !ImportValue dev-PrivateSubnetId
+        - !ImportValue ${EnvironmentName}-PrivateSubnetId1
+        - !ImportValue ${EnvironmentName}-PrivateSubnetId2
       Type: application
       Tags:
         - Key: Name
@@ -49,7 +53,7 @@ Resources:
     Properties:
       TargetType: lambda
       Targets:
-        - Id: !ImportValue dev-LambdaFunctionArn
+        - Id: !Ref LambdaFunctionName
 
   ALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -60,6 +64,14 @@ Resources:
       LoadBalancerArn: !Ref ApplicationLoadBalancer
       Port: 80
       Protocol: HTTP
+
+  LambdaALBPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref LambdaFunctionName
+      Principal: elasticloadbalancing.amazonaws.com
+      SourceArn: !Ref ALBTargetGroup
 
 Outputs:
   LoadBalancerDNS:
