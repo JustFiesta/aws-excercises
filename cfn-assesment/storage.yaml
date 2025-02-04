@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Assesment template for storage setup'
 
 Parameters:
-  EnvironmentName:
+  EnvName:
     Type: String
     Default: 'dev'
 
@@ -10,7 +10,7 @@ Resources:
   StorageBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub '${AWS::AccountId}-${EnvironmentName}-storage'
+      BucketName: !Sub '${AWS::AccountId}-${EnvName}-storage'
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -20,11 +20,11 @@ Resources:
         Status: Enabled
       Tags:
         - Key: Environment
-          Value: !Ref EnvironmentName
+          Value: !Ref EnvName
           
 Outputs:
   BucketName:
     Description: 'Storage Bucket Name'
     Value: !Ref StorageBucket
     Export:
-      Name: !Sub '${EnvironmentName}-BucketName'
+      Name: !Sub '${EnvName}-BucketName'
