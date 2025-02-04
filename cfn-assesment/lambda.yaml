@@ -64,6 +64,7 @@ Resources:
                 Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Ref SecretArn
+      PermissionsBoundary: !Sub arn:aws:iam::${AWS::AccountId}:policy/DefaultBoundaryPolicy
 
   LambdaFunction:
     Type: AWS::Lambda::Function
