@@ -5,13 +5,15 @@ Parameters:
   EnvironmentName:
     Type: String
     Default: 'dev'
+  VpcId:
+    Type: String
 
 Resources:
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: 'Security group for ALB'
-      VpcId: !ImportValue dev-VpcId
+      VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
