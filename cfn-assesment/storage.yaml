@@ -10,7 +10,7 @@ Resources:
   StorageBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${AWS::AccountId}-${EnvironmentName}-storage
+      BucketName: !Sub '${AWS::AccountId}-${EnvironmentName}-storage'
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -27,4 +27,4 @@ Outputs:
     Description: 'Storage Bucket Name'
     Value: !Ref StorageBucket
     Export:
-      Name: !Sub ${EnvironmentName}-BucketName
+      Name: !Sub '${EnvironmentName}-BucketName'
