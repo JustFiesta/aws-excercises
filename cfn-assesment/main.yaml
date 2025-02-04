@@ -37,8 +37,6 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 'https://s3.amazonaws.com/${BucketName}/storage.yaml'
-      Parameters:
-        EnvironmentName: !Ref EnvironmentName
 
   LambdaStack:
     Type: AWS::CloudFormation::Stack
