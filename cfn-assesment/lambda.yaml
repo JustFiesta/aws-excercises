@@ -147,13 +147,3 @@ Outputs:
     Value: !Ref LambdaSecurityGroup
     Export:
       Name: !Sub ${EnvironmentName}-LambdaSecurityGroup
-
-  StorageBucketName:
-    Value: !Ref StorageBucket
-    Export:
-      Name: !Sub ${EnvironmentName}-StorageBucketName
-
-  SecretManagerSecret:
-    Value: !Ref SecretManagerSecret
-    Export:
-      Name: !Sub ${EnvironmentName}-SecretManagerSecret
