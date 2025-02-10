@@ -54,5 +54,5 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         VpcId: !GetAtt NetworkStack.Outputs.VpcId
-        LambdaFunctionName: !ImportValue ${EnvironmentName}-LambdaFunctionName
-        LambdaSecurityGroupId: !ImportValue ${EnvironmentName}-LambdaSecurityGroup
+        LambdaFunctionArn: !GetAtt LambdaStack.Outputs.LambdaFunctionArn
+        LambdaSecurityGroupId: !GetAtt LambdaStack.Outputs.LambdaSecurityGroupId

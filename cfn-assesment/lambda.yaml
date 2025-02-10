@@ -7,7 +7,9 @@ Parameters:
     Default: 'dev'
   VpcId:
     Type: String
-  PrivateSubnetId:
+  PrivateSubnetId1:
+    Type: String
+  PrivateSubnetId2:
     Type: String
   BucketName:
     Type: String
@@ -41,6 +43,7 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      PermissionsBoundary: !Sub "arn:aws:iam::${AWS::AccountId}:policy/DefaultBoundaryPolicy"
       Policies:
         - PolicyName: !Sub ${EnvironmentName}-lambda-storage-policy
           PolicyDocument:
@@ -64,7 +67,6 @@ Resources:
                 Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Ref SecretArn
-      PermissionsBoundary: !Sub arn:aws:iam::${AWS::AccountId}:policy/DefaultBoundaryPolicy
 
   LambdaFunction:
     Type: AWS::Lambda::Function
@@ -78,13 +80,13 @@ Resources:
 
           // Konfiguracja klientów AWS SDK
           const s3 = new AWS.S3({
-              endpoint: `https://s3.${process.env.LAMBDA_AWS_REGION}.amazonaws.com`,
-              region: process.env.LAMBDA_AWS_REGION
+              endpoint: `https://s3.${process.env.AWS_REGION}.amazonaws.com`,
+              region: process.env.AWS_REGION
           });
 
           const secretsManager = new AWS.SecretsManager({
-              endpoint: `https://secretsmanager.${process.env.LAMBDA_AWS_REGION}.amazonaws.com`,
-              region: process.env.LAMBDA_AWS_REGION
+              endpoint: `https://secretsmanager.${process.env.AWS_REGION}.amazonaws.com`,
+              region: process.env.AWS_REGION
           });
 
           exports.handler = async (event) => {
@@ -128,12 +130,12 @@ Resources:
         SecurityGroupIds:
           - !Ref LambdaSecurityGroup
         SubnetIds:
-          - !Ref PrivateSubnetId
+          - !Ref PrivateSubnetId1
+          - !Ref PrivateSubnetId2
       Environment:
         Variables:
           SECRET_ARN: !Ref SecretArn
           BUCKET_NAME: !Ref BucketName
-          LAMBDA_AWS_REGION: !Ref AWS::Region
       Tags:
         - Key: Environment
           Value: !Ref EnvironmentName
