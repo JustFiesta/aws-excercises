@@ -54,5 +54,8 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         VpcId: !GetAtt NetworkStack.Outputs.VpcId
+        PrivateSubnetId1: !GetAtt NetworkStack.Outputs.PrivateSubnetId1
+        PrivateSubnetId2: !GetAtt NetworkStack.Outputs.PrivateSubnetId2 
         LambdaFunctionArn: !GetAtt LambdaStack.Outputs.LambdaFunctionArn
         LambdaSecurityGroupId: !GetAtt LambdaStack.Outputs.LambdaSecurityGroupId
+        ALBTargetGroupName: assesment

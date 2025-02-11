@@ -13,6 +13,12 @@ Parameters:
   LambdaFunctionArn:
     Type: String
     Description: 'Arn of the Lambda Function'
+  PrivateSubnetId1:
+    Type: String
+  PrivateSubnetId2:
+    Type: String
+  ALBTargetGroupName:
+    Type: String
 
 Resources:
   ALBSecurityGroup:
@@ -41,8 +47,8 @@ Resources:
       SecurityGroups:
         - !Ref ALBSecurityGroup
       Subnets:
-        - !ImportValue ${EnvironmentName}-PrivateSubnetId1
-        - !ImportValue ${EnvironmentName}-PrivateSubnetId2
+        - !Ref PrivateSubnetId1
+        - !Ref PrivateSubnetId2
       Type: application
       Tags:
         - Key: Name
@@ -50,8 +56,10 @@ Resources:
 
   ALBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: LambdaALBPermission
     Properties:
       TargetType: lambda
+      Name: !Sub ${ALBTargetGroupName}
       Targets:
         - Id: !Ref LambdaFunctionArn
 
@@ -67,11 +75,13 @@ Resources:
 
   LambdaALBPermission:
     Type: AWS::Lambda::Permission
+    DependsOn:
+      - ApplicationLoadBalancer
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref LambdaFunctionArn
       Principal: elasticloadbalancing.amazonaws.com
-      SourceArn: !Ref ALBTargetGroup
+      SourceArn: !Sub "arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/${ALBTargetGroupName}/*"
 
 Outputs:
   LoadBalancerDNS:

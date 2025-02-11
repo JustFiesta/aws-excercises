@@ -49,6 +49,6 @@ aws s3 cp lambda.yaml s3://BUCKET_NAME/lambda.yaml
 aws cloudformation deploy \
   --template-file main.yaml \
   --stack-name MAIN_STACK_NAME \
-  --capabilities CAPABILITY_IAM
+  --capabilities CAPABILITY_NAMED_IAM \
   --parameter-overrides BucketName=YOUR_BUCKET_NAME
 ```
