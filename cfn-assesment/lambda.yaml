@@ -75,54 +75,8 @@ Resources:
       Handler: index.handler
       Role: !GetAtt LambdaRole.Arn
       Code:
-        ZipFile: |
-          const AWS = require('aws-sdk');
-
-          // Konfiguracja klientów AWS SDK
-          const s3 = new AWS.S3({
-              endpoint: `https://s3.${process.env.AWS_REGION}.amazonaws.com`,
-              region: process.env.AWS_REGION
-          });
-
-          const secretsManager = new AWS.SecretsManager({
-              endpoint: `https://secretsmanager.${process.env.AWS_REGION}.amazonaws.com`,
-              region: process.env.AWS_REGION
-          });
-
-          exports.handler = async (event) => {
-              try {
-                  console.log("Otrzymano żądanie, testujemy połączenie z Vault i Storage Account.");
-
-                  // Pobranie sekretu z Secrets Managera
-                  console.log("Pobieranie sekretu...");
-                  const secretData = await secretsManager.getSecretValue({
-                      SecretId: process.env.SECRET_ARN
-                  }).promise();
-                  console.log("Sekret pobrany pomyślnie.");
-
-                  // Pobranie listy plików w S3
-                  console.log("Listowanie plików w S3...");
-                  const bucketContents = await s3.listObjectsV2({
-                      Bucket: process.env.BUCKET_NAME
-                  }).promise();
-                  console.log("Lista plików pobrana pomyślnie.");
-
-                  return {
-                      statusCode: 200,
-                      body: JSON.stringify({
-                          message: "Połączenie działa!",
-                          secret: secretData.SecretString,
-                          files: bucketContents.Contents ? bucketContents.Contents.map(item => item.Key) : []
-                      })
-                  };
-              } catch (error) {
-                  console.error("Błąd podczas obsługi żądania:", error);
-                  return {
-                      statusCode: 500,
-                      body: JSON.stringify({ error: "Błąd wewnętrzny serwera" })
-                  };
-              }
-          };
+        S3Bucket: !Sub ${BucketName}
+        S3Key: function.zip
       Runtime: nodejs18.x
       Timeout: 30
       MemorySize: 256
@@ -141,11 +95,6 @@ Resources:
           Value: !Ref EnvironmentName
 
 Outputs:
-  LambdaFunctionName:
-    Value: !Ref LambdaFunction
-    Export:
-      Name: !Sub ${EnvironmentName}-LambdaFunctionName
-
   LambdaFunctionArn:
     Value: !GetAtt LambdaFunction.Arn
     Export:

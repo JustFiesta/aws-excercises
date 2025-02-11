@@ -1,0 +1,15 @@
+{
+  "name": "cfn-assesment",
+  "version": "1.0.0",
+  "description": "This folder contains an AWS CloudFormation implementation of a infrastructure setup demonstrating IaC (Infrastructure as Code) practices.",
+  "main": "function.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1692.0"
+  }
+}
