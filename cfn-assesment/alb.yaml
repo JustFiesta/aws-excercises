@@ -19,27 +19,10 @@ Parameters:
     Type: String
   ALBTargetGroupName:
     Type: String
+  ALBSecurityGroup:
+    Type: String
 
 Resources:
-  ALBSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: 'Security group for ALB'
-      VpcId: !Ref VpcId
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-      SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          DestinationSecurityGroupId: !Ref LambdaSecurityGroupId
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName}-alb-sg
-
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -88,8 +71,3 @@ Outputs:
     Value: !GetAtt ApplicationLoadBalancer.DNSName
     Export:
       Name: !Sub ${EnvironmentName}-LoadBalancerDNS
-
-  ALBSecurityGroupId:
-    Value: !Ref ALBSecurityGroup
-    Export:
-      Name: !Sub ${EnvironmentName}-ALBSecurityGroupId

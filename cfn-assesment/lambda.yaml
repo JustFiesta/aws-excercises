@@ -15,22 +15,10 @@ Parameters:
     Type: String
   SecretArn:
     Type: String
+  LambdaSecurityGroup:
+    Type: String
 
 Resources:
-  LambdaSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: 'Security group for Lambda'
-      VpcId: !Ref VpcId
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0 # temporary
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName}-lambda-sg
-
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -99,8 +87,3 @@ Outputs:
     Value: !GetAtt LambdaFunction.Arn
     Export:
       Name: !Sub ${EnvironmentName}-LambdaFunctionArn
-
-  LambdaSecurityGroupId:
-    Value: !Ref LambdaSecurityGroup
-    Export:
-      Name: !Sub ${EnvironmentName}-LambdaSecurityGroupId

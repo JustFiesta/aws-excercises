@@ -41,6 +41,7 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         VpcId: !GetAtt NetworkStack.Outputs.VpcId
+        LambdaSecurityGroup: !GetAtt NetworkStack.Outputs.LambdaSecurityGroup
         PrivateSubnetId1: !GetAtt NetworkStack.Outputs.PrivateSubnetId1
         PrivateSubnetId2: !GetAtt NetworkStack.Outputs.PrivateSubnetId2
         BucketName: !GetAtt StorageStack.Outputs.BucketName
@@ -59,3 +60,4 @@ Resources:
         LambdaFunctionArn: !GetAtt LambdaStack.Outputs.LambdaFunctionArn
         LambdaSecurityGroupId: !GetAtt LambdaStack.Outputs.LambdaSecurityGroupId
         ALBTargetGroupName: assesment
+        ALBSecurityGroup: !GetAtt NetworkStack.Outputs.ALBSecurityGroupId
