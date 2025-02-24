@@ -41,7 +41,7 @@ Resources:
       Parameters:
         EnvironmentName: !Ref EnvironmentName
         VpcId: !GetAtt NetworkStack.Outputs.VpcId
-        LambdaSecurityGroup: !GetAtt NetworkStack.Outputs.LambdaSecurityGroup
+        LambdaSecurityGroup: !GetAtt NetworkStack.Outputs.LambdaSecurityGroupId
         PrivateSubnetId1: !GetAtt NetworkStack.Outputs.PrivateSubnetId1
         PrivateSubnetId2: !GetAtt NetworkStack.Outputs.PrivateSubnetId2
         BucketName: !GetAtt StorageStack.Outputs.BucketName

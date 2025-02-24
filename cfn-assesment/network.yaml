@@ -98,7 +98,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: 'Security group for ALB'
-      VpcId: !Ref VpcId
+      VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -108,7 +108,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
-          DestinationSecurityGroupId: !Ref LambdaSecurityGroupId
+          DestinationSecurityGroupId: !Ref LambdaSecurityGroup
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-alb-sg
