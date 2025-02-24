@@ -89,7 +89,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
-          SourceSecurityGroupId: !Ref ALBSecurityGroup
+          CidrIp: 10.0.0.0/16
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-lambda-sg
@@ -105,10 +105,8 @@ Resources:
           ToPort: 80
           CidrIp: 0.0.0.0/0
       SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          DestinationSecurityGroupId: !Ref LambdaSecurityGroup
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-alb-sg
@@ -133,7 +131,7 @@ Resources:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
       SecurityGroupIds:
-        - !Ref LambdaSecurityGroup
+        - !Ref ALBSecurityGroup
   
   S3VPCEndpoint:
     Type: AWS::EC2::VPCEndpoint
